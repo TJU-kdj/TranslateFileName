@@ -34,17 +34,18 @@ namespace TranslateFileName
                 string folderPath = folderBrowser.SelectedPath;
                 DirectoryInfo directoryInfo = new DirectoryInfo(folderPath);
                 GetAllFilesName(directoryInfo);
-                AnalysisFiles();
+                if(q!="")AnalysisFiles();
                 Thread.Sleep(1000);
                 GetAllFoldersName(directoryInfo);
-                AnalysisFolders();
+                if(folderName!="") AnalysisFolders();
             }
-            Console.WriteLine(folderName+"\n完成");
+            Console.WriteLine("Finsh");
             Console.ReadLine();
         }
 
         static void GetAllFoldersName(DirectoryInfo directoryInfo)
         {
+            if (directoryInfo.Name == "TypeSort" || directoryInfo.Name == "TimeSort" || directoryInfo.Name == "0_Sort") return;
             try
             {
                 DirectoryInfo[] directories = directoryInfo.GetDirectories();
@@ -54,7 +55,6 @@ namespace TranslateFileName
                 }
                 if(directoryInfo.Name.Contains(" "))
                 {
-                    string aaa = directoryInfo.Name.Replace(' ', '_');
                     directoryInfo.MoveTo(directoryInfo.Parent.FullName + "/" + directoryInfo.Name.Replace(' ', '_'));
                 }
                 if (IsHanZi(directoryInfo.Name))
@@ -64,7 +64,7 @@ namespace TranslateFileName
                 }
                 
             }
-            catch (System.UnauthorizedAccessException e)
+            catch (UnauthorizedAccessException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -86,7 +86,7 @@ namespace TranslateFileName
                     }
                 }
             }
-            catch(Exception e)
+            catch(UnauthorizedAccessException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -101,14 +101,14 @@ namespace TranslateFileName
                 string[] folderLocation_array = folderLocation.ToArray();
                 if (folderNewName.Length == folderLocation.Count)
                 {
-                    for (int i = 0; i < fileLocation.Count; i++)
+                    for (int i = 0; i < folderLocation.Count; i++)
                     {
                         DirectoryInfo directory = new DirectoryInfo(folderLocation_array[i]);
                         directory.MoveTo(directory.Parent.FullName + "/" + folderNewName[i].Replace(' ', '_'));
                     }
                 }
             }
-            catch (Exception e)
+            catch (UnauthorizedAccessException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -116,6 +116,7 @@ namespace TranslateFileName
 
         private static void GetAllFilesName(DirectoryInfo directoryInfo)
         {
+            if (directoryInfo.Name == "TypeSort" || directoryInfo.Name == "TimeSort" || directoryInfo.Name == "0_Sort") return;
             try
             {
                 DirectoryInfo[] directories = directoryInfo.GetDirectories();
@@ -137,7 +138,7 @@ namespace TranslateFileName
                     }
                 }
             }
-            catch(Exception e)
+            catch(UnauthorizedAccessException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -154,14 +155,15 @@ namespace TranslateFileName
             return false;
         }
 
-        static string sign
+        static string sign(string old)
         {
-            get { return string.Format("{0}{1}{2}{3}", appid, q, salt, key); }
+            return string.Format("{0}{1}{2}{3}", appid, old, salt, key); 
         }
-        static string getMd5()
+
+        static string getMd5(string old)
         {
             var md5 = new MD5CryptoServiceProvider();
-            var result = Encoding.UTF8.GetBytes(sign);
+            var result = Encoding.UTF8.GetBytes(sign(old));
             var output = md5.ComputeHash(result);
             return BitConverter.ToString(output).Replace("-", "").ToLower();
         }
@@ -170,12 +172,12 @@ namespace TranslateFileName
         {
             var client = new RestClient("http://api.fanyi.baidu.com");
             var request = new RestRequest("/api/trans/vip/translate", Method.GET);
-            request.AddParameter("q", q);
+            request.AddParameter("q", old);
             request.AddParameter("from", from);
             request.AddParameter("to", to);
             request.AddParameter("appid", appid);
             request.AddParameter("salt", salt);
-            request.AddParameter("sign", getMd5());
+            request.AddParameter("sign", getMd5(old));
             IRestResponse response = client.Execute(request);
             return response.Content;
         }
